@@ -62,9 +62,7 @@ export default function Hero() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="mx-auto mb-12 max-w-2xl text-lg text-muted-foreground"
             >
-              KriraAI is an AI and IT solutions provider helping startups and
-              enterprises build intelligent, scalable digital products that
-              drive business innovation.
+             Transform your business with KriraAI, specializing in AI services, mobile app development, web development, and more. 
             </motion.p>
 
             <motion.div

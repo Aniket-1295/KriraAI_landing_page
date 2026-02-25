@@ -1,12 +1,46 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import dynamic from "next/dynamic"
 import Hero from "@/components/home/hero"
-import Features from "@/components/features"
-import { TestimonialsSection } from "@/components/testimonials"
-import { NewReleasePromo } from "@/components/new-release-promo"
-import { FAQSection } from "@/components/faq-section"
-import { PricingSection } from "@/components/pricing-section"
-import { StickyFooter } from "@/components/sticky-footer"
+
+const Features = dynamic(() => import("@/components/features"), {
+  ssr: true,
+})
+
+const TestimonialsSection = dynamic(
+  () => import("@/components/testimonials").then((mod) => mod.TestimonialsSection),
+  {
+    ssr: true,
+  },
+)
+
+const NewReleasePromo = dynamic(
+  () => import("@/components/new-release-promo").then((mod) => mod.NewReleasePromo),
+  {
+    ssr: true,
+  },
+)
+
+const FAQSection = dynamic(
+  () => import("@/components/faq-section").then((mod) => mod.FAQSection),
+  {
+    ssr: true,
+  },
+)
+
+const PricingSection = dynamic(
+  () => import("@/components/pricing-section").then((mod) => mod.PricingSection),
+  {
+    ssr: true,
+  },
+)
+
+const StickyFooter = dynamic(
+  () => import("@/components/sticky-footer").then((mod) => mod.StickyFooter),
+  {
+    ssr: true,
+  },
+)
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -18,14 +52,15 @@ export default function Home() {
     root.classList.add("dark")
   }, [])
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100)
-    }
-
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+  const handleScroll = useCallback(() => {
+    const scrolled = window.scrollY > 100
+    setIsScrolled((prev) => (prev === scrolled ? prev : scrolled))
   }, [])
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [handleScroll])
 
   const handleMobileNavClick = (elementId: string) => {
     setIsMobileMenuOpen(false)

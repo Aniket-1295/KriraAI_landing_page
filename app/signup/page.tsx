@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,6 +19,8 @@ export default function SignupPage() {
   })
   const [isLoading, setIsLoading] = useState(false)
 
+  const router = useRouter()
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
       ...prev,
@@ -29,13 +32,40 @@ export default function SignupPage() {
     e.preventDefault()
     if (formData.password !== formData.confirmPassword) {
       console.log("[v0] Password mismatch")
+      window.alert("Passwords do not match.")
       return
     }
     setIsLoading(true)
-    // Simulate signup process
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsLoading(false)
-    console.log("[v0] Signup attempt:", formData)
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error("Signup error:", data?.error || response.statusText)
+        window.alert(data?.error || "Failed to create account. Please try again.")
+        return
+      }
+
+      console.log("[auth] Signup success:", data)
+      window.alert("Account created successfully. You can now log in.")
+      router.push("/login")
+    } catch (error) {
+      console.error("Unexpected signup error:", error)
+      window.alert("Something went wrong. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
