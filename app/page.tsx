@@ -1,12 +1,46 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, lazy, Suspense, useRef } from "react"
 import Hero from "@/components/home/hero"
-import Features from "@/components/features"
-import { TestimonialsSection } from "@/components/testimonials"
-import { NewReleasePromo } from "@/components/new-release-promo"
-import { FAQSection } from "@/components/faq-section"
-import { PricingSection } from "@/components/pricing-section"
-import { StickyFooter } from "@/components/sticky-footer"
+
+const Features = lazy(() => import("@/components/features"))
+const TestimonialsSection = lazy(() => import("@/components/testimonials").then(m => ({ default: m.TestimonialsSection })))
+const NewReleasePromo = lazy(() => import("@/components/new-release-promo").then(m => ({ default: m.NewReleasePromo })))
+const FAQSection = lazy(() => import("@/components/faq-section").then(m => ({ default: m.FAQSection })))
+const PricingSection = lazy(() => import("@/components/pricing-section").then(m => ({ default: m.PricingSection })))
+const StickyFooter = lazy(() => import("@/components/sticky-footer").then(m => ({ default: m.StickyFooter })))
+
+function LazySection({ children, fallbackHeight = "400px" }: { children: React.ReactNode; fallbackHeight?: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: "200px" }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref}>
+      {isVisible ? (
+        <Suspense fallback={<div style={{ minHeight: fallbackHeight }} />}>
+          {children}
+        </Suspense>
+      ) : (
+        <div style={{ minHeight: fallbackHeight }} />
+      )}
+    </div>
+  )
+}
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -19,30 +53,35 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    let ticking = false
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100)
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 100)
+          ticking = false
+        })
+        ticking = true
+      }
     }
 
-    window.addEventListener("scroll", handleScroll)
+    window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const handleMobileNavClick = (elementId: string) => {
-    setIsMobileMenuOpen(false)
-    setTimeout(() => {
-      const element = document.getElementById(elementId)
-      if (element) {
-        const headerOffset = 120 // Account for sticky header height + margin
-        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-        const offsetPosition = elementPosition - headerOffset
+  const scrollToElement = useCallback((elementId: string) => {
+    const element = document.getElementById(elementId)
+    if (element) {
+      const headerOffset = 120
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+      const offsetPosition = elementPosition - headerOffset
+      window.scrollTo({ top: offsetPosition, behavior: "smooth" })
+    }
+  }, [])
 
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: "smooth",
-        })
-      }
-    }, 100)
-  }
+  const handleMobileNavClick = useCallback((elementId: string) => {
+    setIsMobileMenuOpen(false)
+    setTimeout(() => scrollToElement(elementId), 100)
+  }, [scrollToElement])
 
   return (
     <div className="min-h-screen w-full relative bg-black">
@@ -85,80 +124,16 @@ export default function Home() {
         </a>
 
         <div className="absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium text-muted-foreground transition duration-200 hover:text-foreground md:flex md:space-x-2">
-          <a
-            className="relative px-4 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            onClick={(e) => {
-              e.preventDefault()
-              const element = document.getElementById("features")
-              if (element) {
-                const headerOffset = 120 // Account for sticky header height + margin
-                const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-                const offsetPosition = elementPosition - headerOffset
-
-                window.scrollTo({
-                  top: offsetPosition,
-                  behavior: "smooth",
-                })
-              }
-            }}
-          >
+          <a className="relative px-4 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer" onClick={() => scrollToElement("features")}>
             <span className="relative z-20">Features</span>
           </a>
-          <a
-            className="relative px-4 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            onClick={(e) => {
-              e.preventDefault()
-              const element = document.getElementById("pricing")
-              if (element) {
-                const headerOffset = 120 // Account for sticky header height + margin
-                const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-                const offsetPosition = elementPosition - headerOffset
-
-                window.scrollTo({
-                  top: offsetPosition,
-                  behavior: "smooth",
-                })
-              }
-            }}
-          >
+          <a className="relative px-4 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer" onClick={() => scrollToElement("pricing")}>
             <span className="relative z-20">Pricing</span>
           </a>
-          <a
-            className="relative px-4 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            onClick={(e) => {
-              e.preventDefault()
-              const element = document.getElementById("testimonials")
-              if (element) {
-                const headerOffset = 120 // Account for sticky header height + margin
-                const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-                const offsetPosition = elementPosition - headerOffset
-
-                window.scrollTo({
-                  top: offsetPosition,
-                  behavior: "smooth",
-                })
-              }
-            }}
-          >
+          <a className="relative px-4 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer" onClick={() => scrollToElement("testimonials")}>
             <span className="relative z-20">Testimonials</span>
           </a>
-          <a
-            className="relative px-4 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            onClick={(e) => {
-              e.preventDefault()
-              const element = document.getElementById("faq")
-              if (element) {
-                const headerOffset = 120 // Account for sticky header height + margin
-                const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-                const offsetPosition = elementPosition - headerOffset
-
-                window.scrollTo({
-                  top: offsetPosition,
-                  behavior: "smooth",
-                })
-              }
-            }}
-          >
+          <a className="relative px-4 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer" onClick={() => scrollToElement("faq")}>
             <span className="relative z-20">FAQ</span>
           </a>
         </div>
@@ -267,29 +242,41 @@ export default function Home() {
       <Hero />
 
       {/* Features Section */}
-      <div id="features">
-        <Features />
-      </div>
+      <LazySection fallbackHeight="800px">
+        <div id="features">
+          <Features />
+        </div>
+      </LazySection>
 
       {/* Pricing Section */}
-      <div id="pricing">
-        <PricingSection />
-      </div>
+      <LazySection fallbackHeight="700px">
+        <div id="pricing">
+          <PricingSection />
+        </div>
+      </LazySection>
 
       {/* Testimonials Section */}
-      <div id="testimonials">
-        <TestimonialsSection />
-      </div>
+      <LazySection fallbackHeight="800px">
+        <div id="testimonials">
+          <TestimonialsSection />
+        </div>
+      </LazySection>
 
-      <NewReleasePromo />
+      <LazySection fallbackHeight="500px">
+        <NewReleasePromo />
+      </LazySection>
 
       {/* FAQ Section */}
-      <div id="faq">
-        <FAQSection />
-      </div>
+      <LazySection fallbackHeight="600px">
+        <div id="faq">
+          <FAQSection />
+        </div>
+      </LazySection>
 
       {/* Sticky Footer */}
-      <StickyFooter />
+      <Suspense fallback={null}>
+        <StickyFooter />
+      </Suspense>
     </div>
   )
 }
