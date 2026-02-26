@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import Hero from "@/components/home/hero";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import Hero from "@/components/home/hero";
+import { UserAvatar } from "@/components/user-avatar";
 
 const Features = dynamic(() => import("@/components/features"), {
   ssr: true,
@@ -47,8 +49,10 @@ const StickyFooter = dynamic(
 );
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isAuthenticated = status === "authenticated" && !!session?.user;
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -209,19 +213,28 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-4">
-        <Link
-            href="/login"
-            className="font-medium transition-colors hover:text-foreground text-muted-foreground text-sm cursor-pointer"
-          >
-            Log In
-            </Link>
-
-          <Link
-            href="/signup"
-            className="rounded-md font-bold relative cursor-pointer hover:-translate-y-0.5 transition duration-200 inline-block text-center bg-gradient-to-b from-primary to-primary/80 text-primary-foreground shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] px-4 py-2 text-sm"
-          >
-            Sign Up
-          </Link>
+          {isAuthenticated ? (
+            <UserAvatar
+              name={session?.user?.name}
+              email={session?.user?.email}
+              image={session?.user?.image}
+            />
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="font-medium transition-colors hover:text-foreground text-muted-foreground text-sm cursor-pointer"
+              >
+                Log In
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded-md font-bold relative cursor-pointer hover:-translate-y-0.5 transition duration-200 inline-block text-center bg-gradient-to-b from-primary to-primary/80 text-primary-foreground shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] px-4 py-2 text-sm"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -298,18 +311,30 @@ export default function Home() {
                 FAQ
               </button>
               <div className="border-t border-border/50 pt-4 mt-4 flex flex-col space-y-3">
-                <Link
-                  href="/login"
-                  className="px-4 py-3 text-lg font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-background/50 cursor-pointer"
-                >
-                  Log In
-                </Link>
-                <Link
-                  href="/signup"
-                  className="px-4 py-3 text-lg font-bold text-center bg-gradient-to-b from-primary to-primary/80 text-primary-foreground rounded-lg shadow-lg hover:-translate-y-0.5 transition-all duration-200"
-                >
-                  Sign Up
-                </Link>
+                {isAuthenticated ? (
+                  <div className="flex justify-center py-2">
+                    <UserAvatar
+                      name={session?.user?.name}
+                      email={session?.user?.email}
+                      image={session?.user?.image}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="px-4 py-3 text-lg font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-background/50 cursor-pointer"
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="px-4 py-3 text-lg font-bold text-center bg-gradient-to-b from-primary to-primary/80 text-primary-foreground rounded-lg shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </div>
